@@ -209,16 +209,6 @@ Contributions are welcome! Please feel free to submit a Pull Request. For major 
 - Update documentation as needed
 - Ensure responsive design compatibility
 
-## 📝 License
-
-This project is open source and available under the [MIT License](LICENSE).
-
-## 🙏 Acknowledgments
-
-- Bootstrap for the responsive UI framework
-- Font Awesome for beautiful icons
-- jsPDF for PDF generation capabilities
-- The educational community for inspiration and feedback
 
 ## 📞 Support
 
