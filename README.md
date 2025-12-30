@@ -230,6 +230,6 @@ If you encounter any issues or have suggestions:
 
 ---
 
-**Made with ❤️ for students everywhere**
+**MADE BY RED_GHOST**
 
 *Empowering students to study smarter, not harder*
