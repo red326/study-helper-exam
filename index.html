@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ultimate Study Hub - Student Edition</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        :root {--bg:#f8f9fa;--text:#212529;--card:#fff;--border:#dee2e6;--accent:#7c3aed;}
+        [data-bs-theme="dark"]{--bg:#0d1117;--text:#e6edf3;--card:#161b22;--border:#30363d;}
+        body{font-family:system-ui,sans-serif;background:var(--bg);color:var(--text);transition:all .3s;}
+        .card{background:var(--card);border:1px solid var(--border);border-radius:12px;margin-bottom:1rem;transition:transform .2s;}
+        .card:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(124,58,237,.15);}
+        .stat-card{background:linear-gradient(135deg,var(--accent),#0ea5e9);color:#fff;padding:1.5rem;border-radius:12px;text-align:center;}
+        .stat-card h3{font-size:2.5rem;font-weight:700;margin:0;}
+        .priority-high{background:#ef4444;color:#fff;font-size:.7rem;padding:3px 10px;border-radius:12px;}
+        .priority-medium{background:#f59e0b;color:#fff;font-size:.7rem;padding:3px 10px;border-radius:12px;}
+        .priority-low{background:#10b981;color:#fff;font-size:.7rem;padding:3px 10px;border-radius:12px;}
+        .flashcard{min-height:250px;cursor:pointer;perspective:1000px;position:relative;width:100%;height:100%;}
+        .flashcard-inner{position:relative;width:100%;height:100%;min-height:250px;transition:transform .6s;transform-style:preserve-3d;}
+        .flashcard.flipped .flashcard-inner{transform:rotateY(180deg);}
+        .flashcard-front,.flashcard-back{position:absolute;width:100%;height:100%;backface-visibility:hidden;border-radius:12px;top:0;left:0;}
+        .flashcard-back{transform:rotateY(180deg);}
+        .motivational-tip{background:linear-gradient(135deg,rgba(124,58,237,.1),rgba(14,165,233,.1));border-left:4px solid var(--accent);padding:1rem;border-radius:8px;margin:1rem 0;}
+        .subject-color-dot{width:16px;height:16px;border-radius:50%;display:inline-block;margin-right:8px;}
+        .calendar-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;background:white;border:1px solid var(--border);border-radius:8px;padding:12px;}
+        .calendar-day-header{text-align:center;font-weight:600;padding:12px 4px;background:#f8f9fa;color:#495057;border-radius:6px;font-size:0.8rem;border:1px solid var(--border);}
+        .calendar-day{min-height:90px;padding:8px;border:1px solid var(--border);border-radius:6px;background:white;transition:all 0.2s;cursor:pointer;}
+        .calendar-day:hover{box-shadow:0 2px 8px rgba(0,0,0,0.1);border-color:#7c3aed;}
+        .calendar-day.other-month{opacity:0.3;background:#f8f9fa;}
+        .calendar-day.today{background:#e8f4ff;border:2px solid #2563eb;font-weight:600;}
+        .calendar-day-number{font-size:1rem;font-weight:600;margin-bottom:4px;color:#212529;}
+        .calendar-day.today .calendar-day-number{color:#2563eb;font-size:1.1rem;}
+        .calendar-event{font-size:0.7rem;padding:3px 5px;border-radius:4px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border-left:3px solid;}
+        .event-exam{background:#fee;border-left-color:#dc2626;color:#7f1d1d;}
+        .event-target{background:#d1fae5;border-left-color:#059669;color:#064e3b;}
+        .event-topic{background:#fef3c7;border-left-color:#d97706;color:#78350f;}
+        .data-btn{width:44px;height:44px;border:none;border-radius:12px;display:inline-flex;align-items:center;justify-content:center;font-size:1.1rem;cursor:pointer;transition:all 0.3s ease;box-shadow:0 4px 12px rgba(0,0,0,0.15);position:relative;overflow:hidden;}
+        .data-btn:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,0,0,0.25);}
+        .data-btn:active{transform:translateY(0);box-shadow:0 2px 8px rgba(0,0,0,0.2);}
+        .data-btn i{position:relative;z-index:1;}
+        .btn-export{background:#06b6d4;color:#fff;}
+        .btn-export:hover{background:#0891b2;}
+        .btn-import{background:#fbbf24;color:#fff;}
+        .btn-import:hover{background:#f59e0b;}
+        .export-dropdown{position:relative;display:inline-block;}
+        .export-menu{position:absolute;top:100%;right:0;margin-top:8px;background:var(--card);border:1px solid var(--border);border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,0.15);min-width:200px;z-index:1000;display:none;overflow:hidden;}
+        .export-menu.show{display:block;animation:slideDown 0.2s ease;}
+        @keyframes slideDown{from{opacity:0;transform:translateY(-10px);}to{opacity:1;transform:translateY(0);}}
+        .export-menu-item{padding:12px 16px;cursor:pointer;transition:all 0.2s;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;}
+        .export-menu-item:last-child{border-bottom:none;}
+        .export-menu-item:hover{background:rgba(124,58,237,0.1);}
+        .export-menu-item i{width:20px;text-align:center;}
+        .format-label{font-weight:600;}
+        .format-desc{font-size:0.75rem;color:var(--text);opacity:0.7;}
+        @media(max-width:768px){.stat-card h3{font-size:1.8rem;}.calendar-day{min-height:60px;padding:4px;}.calendar-event{font-size:0.6rem;}.data-btn{width:38px;height:38px;font-size:1rem;}}
+    </style>
+</head>
+<body>
+<div class="container-fluid p-3">
+    <header class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-3">
+        <div><h1 class="h3 mb-0"><i class="fas fa-graduation-cap text-primary"></i> Study Hub</h1>
+        <p class="text-muted small mb-0">Complete study companion</p></div>
+        <div class="d-flex gap-2 flex-wrap">
+            <input type="text" id="search" class="form-control form-control-sm" placeholder="Search..." style="width:200px">
+            <a href="https://rtu.sumsraj.com/exam/report/downloadgradesheet.aspx" target="_blank" class="btn btn-sm btn-primary"><i class="fas fa-certificate"></i> RTU Results</a>
+            <button class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#gpaModal"><i class="fas fa-calculator"></i> GPA Calculator</button>
+            <button class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#subModal"><i class="fas fa-plus"></i> Subject</button>
+            <button class="btn btn-sm btn-dark" data-bs-toggle="modal" data-bs-target="#focusModal"><i class="fas fa-eye"></i> Focus</button>
+            <div class="form-check form-switch mb-0"><input class="form-check-input" type="checkbox" id="theme"><label class="form-check-label small" for="theme">Dark</label></div>
+            <div class="export-dropdown">
+                <button class="data-btn btn-export" id="exportBtn" title="Export Data"><i class="fas fa-download"></i></button>
+                <div class="export-menu" id="exportMenu">
+                    <div class="export-menu-item" onclick="exportData('json')">
+                        <i class="fas fa-code text-primary"></i>
+                        <div>
+                            <div class="format-label">JSON</div>
+                            <div class="format-desc">Full data backup</div>
+                        </div>
+                    </div>
+                    <div class="export-menu-item" onclick="exportData('csv')">
+                        <i class="fas fa-table text-success"></i>
+                        <div>
+                            <div class="format-label">CSV</div>
+                            <div class="format-desc">Spreadsheet format</div>
+                        </div>
+                    </div>
+                    <div class="export-menu-item" onclick="exportData('txt')">
+                        <i class="fas fa-file-alt text-warning"></i>
+                        <div>
+                            <div class="format-label">TXT</div>
+                            <div class="format-desc">Plain text report</div>
+                        </div>
+                    </div>
+                    <div class="export-menu-item" onclick="exportData('pdf')">
+                        <i class="fas fa-file-pdf text-danger"></i>
+                        <div>
+                            <div class="format-label">PDF</div>
+                            <div class="format-desc">Professional report</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <button class="data-btn btn-import" id="importBtn" title="Import Data"><i class="fas fa-upload"></i></button>
+            <input type="file" id="importFile" accept=".json" class="d-none">
+        </div>
+    </header>
+    <div class="row g-3 mb-3">
+        <div class="col-md-3 col-6"><div class="stat-card"><h3 id="statSub">0</h3><p><i class="fas fa-book"></i> Subjects</p></div></div>
+        <div class="col-md-3 col-6"><div class="stat-card" style="background:linear-gradient(135deg,#10b981,#059669)"><h3 id="statDone">0</h3><p><i class="fas fa-check"></i> Done</p></div></div>
+        <div class="col-md-3 col-6"><div class="stat-card" style="background:linear-gradient(135deg,#f59e0b,#d97706)"><h3 id="statPending">0</h3><p><i class="fas fa-clock"></i> Pending</p></div></div>
+        <div class="col-md-3 col-6"><div class="stat-card" style="background:linear-gradient(135deg,#ef4444,#dc2626)"><h3>🔥<span id="streak">0</span></h3><p>Study Streak</p></div></div>
+    </div>
+    <div class="motivational-tip"><i class="fas fa-lightbulb text-warning"></i> <b>Tip:</b> <span id="tip">Loading...</span></div>
+    <div class="row g-3">
+        <div class="col-lg-3">
+            <div class="card"><div class="card-header d-flex justify-content-between align-items-center"><h5 class="mb-0"><i class="fas fa-book-open"></i> Subjects</h5><div class="d-flex gap-2 align-items-center"><span class="badge bg-primary" id="subCount">0</span><button class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#subModal" title="Add Subject"><i class="fas fa-plus"></i></button></div></div><div class="card-body p-0"><div id="subList" class="list-group list-group-flush"></div></div></div>
+            <div class="card"><div class="card-header"><h5 class="mb-0"><i class="fas fa-stopwatch"></i> Pomodoro</h5></div><div class="card-body text-center"><div class="display-4 mb-3" id="timer">25:00</div><div class="d-flex justify-content-center gap-2 mb-3"><button class="btn btn-success btn-sm" id="pomStart"><i class="fas fa-play"></i></button><button class="btn btn-warning btn-sm" id="pomPause"><i class="fas fa-pause"></i></button><button class="btn btn-danger btn-sm" id="pomReset"><i class="fas fa-redo"></i></button></div><div class="input-group input-group-sm"><span class="input-group-text">Minutes</span><input type="number" class="form-control" id="pomMin" value="25" min="1" max="90"></div></div></div>
+            <div class="card"><div class="card-header"><h5 class="mb-0"><i class="fas fa-target"></i> Goals</h5></div><div class="card-body"><div class="input-group input-group-sm mb-2"><input type="text" class="form-control" id="goalIn" placeholder="Add goal..."><button class="btn btn-primary" id="addGoalBtn"><i class="fas fa-plus"></i></button></div><div id="goals"></div></div></div>
+            <div class="card"><div class="card-header bg-primary text-white d-flex justify-content-between align-items-center"><h6 class="mb-0"><i class="fas fa-calendar-alt"></i> Upcoming Exams</h6><button class="btn btn-sm btn-light" data-bs-toggle="modal" data-bs-target="#examModal" title="Manage Exams"><i class="fas fa-plus"></i></button></div><div class="card-body p-2"><div id="examList"></div></div></div>
+        </div>
+        <div class="col-lg-9">
+            <div class="card"><div class="card-header"><h4 class="mb-0" id="curSub">Select a Subject</h4><div class="progress mt-2" style="height:8px"><div class="progress-bar bg-success" id="prog" style="width:0%"></div></div><small class="text-muted" id="progText">0% Complete</small></div>
+            <div class="card-body">
+                <ul class="nav nav-tabs mb-3"><li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab1"><i class="fas fa-list"></i> Topics</button></li><li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab2"><i class="fas fa-layer-group"></i> Flashcards</button></li><li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab3"><i class="fas fa-link"></i> Resources</button></li><li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab4"><i class="fas fa-sticky-note"></i> Notes</button></li><li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab6"><i class="fas fa-calendar"></i> Calendar</button></li><li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab5"><i class="fas fa-chart-line"></i> Analytics</button></li></ul>
+                <div class="tab-content">
+                    <div class="tab-pane fade show active" id="tab1">
+                        <div class="mb-4">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <div>
+                                    <h5 class="mb-1"><i class="fas fa-list-check text-primary"></i> Study Topics</h5>
+                                    <p class="text-muted small mb-0">Organize and track your learning progress</p>
+                                </div>
+                                <button class="btn btn-primary" id="addTopicBtn"><i class="fas fa-plus"></i> Add Topic</button>
+                            </div>
+                            <div class="alert alert-info border-0 mb-3" style="background: linear-gradient(135deg, rgba(124,58,237,0.1), rgba(14,165,233,0.1));">
+                                <div class="row text-center">
+                                    <div class="col-3">
+                                        <div class="h4 mb-0 text-primary" id="topicTotal">0</div>
+                                        <small class="text-muted">Total</small>
+                                    </div>
+                                    <div class="col-3">
+                                        <div class="h4 mb-0 text-success" id="topicDone">0</div>
+                                        <small class="text-muted">Completed</small>
+                                    </div>
+                                    <div class="col-3">
+                                        <div class="h4 mb-0 text-warning" id="topicPending">0</div>
+                                        <small class="text-muted">Pending</small>
+                                    </div>
+                                    <div class="col-3">
+                                        <div class="h4 mb-0 text-danger" id="topicOverdue">0</div>
+                                        <small class="text-muted">Overdue</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <div class="btn-group" role="group">
+                                    <input type="radio" class="btn-check" name="topicFilter" id="filterAll" autocomplete="off" checked>
+                                    <label class="btn btn-outline-secondary" for="filterAll"><i class="fas fa-th"></i> All</label>
+                                    
+                                    <input type="radio" class="btn-check" name="topicFilter" id="filterPending" autocomplete="off">
+                                    <label class="btn btn-outline-warning" for="filterPending"><i class="fas fa-clock"></i> Pending</label>
+                                    
+                                    <input type="radio" class="btn-check" name="topicFilter" id="filterDone" autocomplete="off">
+                                    <label class="btn btn-outline-success" for="filterDone"><i class="fas fa-check-circle"></i> Done</label>
+                                </div>
+                                <div class="text-muted small">
+                                    <i class="fas fa-info-circle"></i> <span id="topicFilterText">Showing all topics</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="topics"></div>
+                    </div>
+                    <div class="tab-pane fade" id="tab2">
+                        <div class="mb-4">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <div>
+                                    <h5 class="mb-1"><i class="fas fa-layer-group text-primary"></i> Flashcards</h5>
+                                    <p class="text-muted small mb-0">Click any card to flip and reveal the answer</p>
+                                </div>
+                                <button class="btn btn-primary" id="addFlashBtn"><i class="fas fa-plus"></i> Add Flashcard</button>
+                            </div>
+                            <div class="alert alert-info border-0" style="background: linear-gradient(135deg, rgba(124,58,237,0.1), rgba(14,165,233,0.1));">
+                                <div class="row text-center">
+                                    <div class="col-4">
+                                        <div class="h4 mb-0 text-primary" id="flashcardTotal">0</div>
+                                        <small class="text-muted">Total Cards</small>
+                                    </div>
+                                    <div class="col-4">
+                                        <div class="h4 mb-0 text-success" id="flashcardEasy">0</div>
+                                        <small class="text-muted">Easy</small>
+                                    </div>
+                                    <div class="col-4">
+                                        <div class="h4 mb-0 text-danger" id="flashcardHard">0</div>
+                                        <small class="text-muted">Hard</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="flashcards" class="row g-3"></div>
+                    </div>
+                    <div class="tab-pane fade" id="tab3">
+                        <div class="mb-4">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <div>
+                                    <h5 class="mb-1"><i class="fas fa-link text-primary"></i> Learning Resources</h5>
+                                    <p class="text-muted small mb-0">Curate helpful links, videos, and materials</p>
+                                </div>
+                            </div>
+                            <div class="card shadow-sm mb-4">
+                                <div class="card-body">
+                                    <h6 class="mb-3"><i class="fas fa-plus-circle text-success"></i> Add New Resource</h6>
+                                    <div class="row g-3">
+                                        <div class="col-md-5">
+                                            <label class="form-label small fw-bold">Resource Name</label>
+                                            <input type="text" class="form-control" id="resName" placeholder="e.g., Khan Academy Tutorial">
+                                        </div>
+                                        <div class="col-md-5">
+                                            <label class="form-label small fw-bold">URL</label>
+                                            <input type="url" class="form-control" id="resUrl" placeholder="https://example.com">
+                                        </div>
+                                        <div class="col-md-2 d-flex align-items-end">
+                                            <button class="btn btn-primary w-100" id="addResBtn"><i class="fas fa-plus"></i> Add</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h6 class="mb-0"><i class="fas fa-bookmark"></i> Saved Resources (<span id="resourceCount">0</span>)</h6>
+                            </div>
+                        </div>
+                        <div id="resources"></div>
+                    </div>
+                    <div class="tab-pane fade" id="tab4">
+                        <div class="mb-4">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <div>
+                                    <h5 class="mb-1"><i class="fas fa-sticky-note text-primary"></i> Study Notes</h5>
+                                    <p class="text-muted small mb-0">Take notes, write summaries, and organize your thoughts</p>
+                                </div>
+                                <div class="d-flex gap-2 align-items-center">
+                                    <small class="text-muted" id="lastSaved"><i class="fas fa-clock"></i> Not saved yet</small>
+                                    <button class="btn btn-success" id="saveNotesBtn"><i class="fas fa-save"></i> Save Notes</button>
+                                </div>
+                            </div>
+                            <div class="card shadow-sm mb-3">
+                                <div class="card-body p-0">
+                                    <textarea class="form-control border-0" id="notes" rows="15" placeholder="Start writing your notes here...\n\n✏️ Tips:\n• Summarize key concepts\n• Write in your own words\n• Use bullet points for clarity\n• Add examples and practice problems" style="resize: vertical; min-height: 400px;"></textarea>
+                                </div>
+                                <div class="card-footer bg-light d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <small class="text-muted"><i class="fas fa-keyboard"></i> <span id="charCount">0</span> characters</small>
+                                        <span class="mx-2">•</span>
+                                        <small class="text-muted"><i class="fas fa-align-left"></i> <span id="wordCount">0</span> words</small>
+                                    </div>
+                                    <div>
+                                        <div class="form-check form-switch mb-0">
+                                            <input class="form-check-input" type="checkbox" id="autoSave" checked>
+                                            <label class="form-check-label small" for="autoSave">Auto-save</label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tab-pane fade" id="tab6">
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <div>
+                                    <h5 class="mb-0"><i class="fas fa-calendar"></i> Calendar</h5>
+                                    <small class="text-muted">Click dates to add or view events</small>
+                                </div>
+                                <div class="btn-group btn-group-sm">
+                                    <button class="btn btn-outline-secondary" id="calPrevMonth"><i class="fas fa-chevron-left"></i></button>
+                                    <button class="btn btn-outline-primary" id="calToday">Today</button>
+                                    <button class="btn btn-outline-secondary" id="calNextMonth"><i class="fas fa-chevron-right"></i></button>
+                                </div>
+                            </div>
+                            <h4 class="text-center mb-3" id="calendarMonth"></h4>
+                        </div>
+                        <div id="calendarView" class="mb-3"></div>
+                        <div class="alert alert-light border">
+                            <div class="d-flex align-items-center gap-3 flex-wrap small">
+                                <span><span class="badge bg-danger">📅</span> Exam</span>
+                                <span><span class="badge bg-success">🎯</span> Target</span>
+                                <span><span class="badge bg-warning">⏰</span> Due</span>
+                                <span><span class="badge bg-primary">★</span> Today</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tab-pane fade" id="tab5">
+                        <div class="mb-4">
+                            <h4 class="mb-3"><i class="fas fa-chart-line text-primary"></i> Study Analytics Dashboard</h4>
+                            <p class="text-muted">Track your progress, monitor goals, and optimize your learning journey</p>
+                        </div>
+                        
+                        <!-- Study Session Controls -->
+                        <div class="card mb-4" style="background: linear-gradient(135deg, rgba(124,58,237,0.1), rgba(14,165,233,0.1)); border: 2px solid var(--accent);">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <h5 class="mb-0"><i class="fas fa-stopwatch text-primary"></i> Study Session</h5>
+                                    <div class="d-flex gap-2">
+                                        <button class="btn btn-success btn-sm" id="startStudyBtn"><i class="fas fa-play"></i> Start</button>
+                                        <button class="btn btn-warning btn-sm d-none" id="pauseStudyBtn"><i class="fas fa-pause"></i> Pause</button>
+                                        <button class="btn btn-danger btn-sm d-none" id="stopStudyBtn"><i class="fas fa-stop"></i> Stop</button>
+                                    </div>
+                                </div>
+                                <div class="display-4 text-center text-primary fw-bold mb-2" id="studyTimeDisplay">0h 0m</div>
+                                <div class="text-center text-muted">Today's Active Study Time</div>
+                            </div>
+                        </div>
+
+                        <!-- Key Metrics Row -->
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-3 col-6">
+                                <div class="card h-100" style="background: linear-gradient(135deg, #7c3aed, #a855f7); color: white;">
+                                    <div class="card-body text-center">
+                                        <i class="fas fa-fire mb-2" style="font-size: 2rem;"></i>
+                                        <h3 class="mb-1" id="analyticsStreak">0</h3>
+                                        <small>Day Streak</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3 col-6">
+                                <div class="card h-100" style="background: linear-gradient(135deg, #10b981, #059669); color: white;">
+                                    <div class="card-body text-center">
+                                        <i class="fas fa-check-circle mb-2" style="font-size: 2rem;"></i>
+                                        <h3 class="mb-1" id="analyticsCompleted">0</h3>
+                                        <small>Topics Done</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3 col-6">
+                                <div class="card h-100" style="background: linear-gradient(135deg, #f59e0b, #d97706); color: white;">
+                                    <div class="card-body text-center">
+                                        <i class="fas fa-clock mb-2" style="font-size: 2rem;"></i>
+                                        <h3 class="mb-1" id="analyticsPending">0</h3>
+                                        <small>Pending Topics</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3 col-6">
+                                <div class="card h-100" style="background: linear-gradient(135deg, #0ea5e9, #0284c7); color: white;">
+                                    <div class="card-body text-center">
+                                        <i class="fas fa-book-open mb-2" style="font-size: 2rem;"></i>
+                                        <h3 class="mb-1" id="analyticsSubjects">0</h3>
+                                        <small>Active Subjects</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Weekly Goal & Progress -->
+                        <div class="card mb-4">
+                            <div class="card-header bg-primary text-white">
+                                <h5 class="mb-0"><i class="fas fa-target"></i> Weekly Goal Tracker</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-bold"><i class="fas fa-bullseye"></i> Set Weekly Goal</label>
+                                        <div class="input-group">
+                                            <input type="number" class="form-control" id="weeklyGoalInput" min="1" max="168" value="20" placeholder="Hours">
+                                            <span class="input-group-text">hrs/week</span>
+                                            <button class="btn btn-success" onclick="setWeeklyGoal()"><i class="fas fa-check"></i></button>
+                                        </div>
+                                        <small class="text-muted">Recommended: 15-25 hours per week</small>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-bold">Current Target</label>
+                                        <div class="d-flex align-items-center gap-3">
+                                            <div class="display-6 text-success" id="weeklyGoalDisplay">20h</div>
+                                            <div class="text-muted">per week</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <span class="fw-bold"><i class="fas fa-chart-bar text-success"></i> Weekly Progress</span>
+                                        <span class="badge bg-primary" id="weeklyProgressText">0%</span>
+                                    </div>
+                                    <div class="progress" style="height: 20px; border-radius: 10px;">
+                                        <div class="progress-bar bg-success progress-bar-striped progress-bar-animated" id="weeklyProgress" role="progressbar" style="width: 0%"></div>
+                                    </div>
+                                    <small class="text-muted mt-1 d-block" id="weeklyProgressMessage">Start studying to track your progress!</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Subject Performance -->
+                        <div class="card mb-4">
+                            <div class="card-header bg-info text-white">
+                                <h5 class="mb-0"><i class="fas fa-chart-pie"></i> Subject Performance</h5>
+                            </div>
+                            <div class="card-body">
+                                <div id="subjectPerformance">
+                                    <div class="alert alert-info">
+                                        <i class="fas fa-info-circle"></i> Add subjects and complete topics to see performance breakdown
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Study Techniques & Insights Row -->
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <div class="card h-100">
+                                    <div class="card-header bg-warning text-white">
+                                        <h5 class="mb-0"><i class="fas fa-graduation-cap"></i> Study Techniques</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <p class="text-muted small mb-3">Learn effective study methods to boost your learning</p>
+                                        <div class="d-grid gap-2">
+                                            <button class="btn btn-outline-primary btn-sm" onclick="showTechnique('feynman')">
+                                                <i class="fas fa-lightbulb"></i> Feynman Technique
+                                            </button>
+                                            <button class="btn btn-outline-success btn-sm" onclick="showTechnique('spaced')">
+                                                <i class="fas fa-clock"></i> Spaced Repetition
+                                            </button>
+                                            <button class="btn btn-outline-warning btn-sm" onclick="showTechnique('active')">
+                                                <i class="fas fa-brain"></i> Active Recall
+                                            </button>
+                                            <button class="btn btn-outline-info btn-sm" onclick="showTechnique('pomodoro')">
+                                                <i class="fas fa-stopwatch"></i> Pomodoro Method
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card h-100">
+                                    <div class="card-header bg-success text-white">
+                                        <h5 class="mb-0"><i class="fas fa-lightbulb"></i> Learning Insights</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <div id="learningInsights">
+                                            <div class="alert alert-light border">
+                                                <h6 class="alert-heading"><i class="fas fa-star text-warning"></i> Getting Started</h6>
+                                                <ul class="small mb-0">
+                                                    <li>Add your subjects to begin tracking</li>
+                                                    <li>Break topics into manageable chunks</li>
+                                                    <li>Set realistic weekly study goals</li>
+                                                    <li>Use the Pomodoro timer for focused sessions</li>
+                                                </ul>
+                                            </div>
+                                            <div class="alert alert-primary border-0">
+                                                <i class="fas fa-quote-left"></i> 
+                                                <em>"Consistency beats perfection. Study a little every day!"</em>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tab-pane fade" id="tab6"><div class="row g-3"><div class="col-md-6"><div class="card"><div class="card-header bg-info text-white"><h5 class="mb-0"><i class="fas fa-clock"></i> Study Time</h5></div><div class="card-body"><canvas id="timeChart" width="300" height="200"></canvas><div class="mt-3 text-center"><div class="h4" id="totalStudyTime">0h 0m</div><small class="text-muted">Total Study Time</small></div></div></div></div><div class="col-md-6"><div class="card"><div class="card-header bg-warning text-white"><h5 class="mb-0"><i class="fas fa-chart-pie"></i> Subject Progress</h5></div><div class="card-body"><canvas id="progressChart" width="300" height="200"></canvas></div></div></div><div class="col-md-6 mt-3"><div class="card"><div class="card-header bg-success text-white"><h5 class="mb-0"><i class="fas fa-fire"></i> Learning Insights</h5></div><div class="card-body"><div id="insights"><div class="alert alert-info"><i class="fas fa-info-circle"></i> Complete more topics to see insights!</div></div></div></div></div><div class="col-md-6 mt-3"><div class="card"><div class="card-header bg-purple text-white" style="background: linear-gradient(135deg, #7c3aed, #a855f7);"><h5 class="mb-0"><i class="fas fa-calendar-week"></i> Weekly Goals</h5></div><div class="card-body"><div class="input-group mb-2"><input type="number" class="form-control" id="weeklyGoal" placeholder="Hours per week" min="1" max="168"><button class="btn btn-primary" id="setWeeklyGoal">Set Goal</button></div><div class="progress mb-2"><div class="progress-bar bg-purple" id="weeklyProgress" style="width: 0%"></div></div><small class="text-muted"><span id="weeklyHours">0</span> / <span id="weeklyTarget">0</span> hours this week</small></div></div></div></div>
+                </div>
+            </div></div>
+        </div>
+    </div>
+    <div class="text-center text-muted py-2" style="font-size: 0.7rem;">
+        <span style="opacity: 0.5;">crafted by <span style="color: #dc2626; font-weight: 600;">Red_Ghost</span></span>
+    </div>
+</div>
+<div class="modal fade" id="subModal"><div class="modal-dialog"><div class="modal-content"><div class="modal-header"><h5>Add Subject</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><div class="mb-3"><label class="form-label">Subject Name</label><input type="text" class="form-control" id="subName" placeholder="e.g., Mathematics"></div><div class="mb-3"><label class="form-label">Exam Date (Optional)</label><input type="date" class="form-control" id="subExamDate"></div><div class="mb-3"><label class="form-label">Color</label><input type="color" class="form-control form-control-color w-100" id="subColor" value="#7c3aed"></div></div><div class="modal-footer"><button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button><button class="btn btn-primary" id="saveSubBtn">Save</button></div></div></div></div>
+<div class="modal fade" id="topicModal"><div class="modal-dialog"><div class="modal-content"><div class="modal-header"><h5>Add Topic</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><div class="mb-3"><label>Topic</label><input type="text" class="form-control" id="topName"></div><div class="mb-3"><label>Priority</label><select class="form-select" id="topPri"><option value="high">High</option><option value="medium" selected>Medium</option><option value="low">Low</option></select></div><div class="mb-3"><label>Due Date</label><input type="date" class="form-control" id="topDue"></div><div class="mb-3"><label>Time (min)</label><input type="number" class="form-control" id="topTime" value="30"></div></div><div class="modal-footer"><button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button><button class="btn btn-primary" id="saveTopicBtn">Save</button></div></div></div></div>
+<div class="modal fade" id="flashModal"><div class="modal-dialog"><div class="modal-content"><div class="modal-header"><h5>Add Flashcard</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><div class="mb-3"><label>Front</label><textarea class="form-control" id="flashFront" rows="3"></textarea></div><div class="mb-3"><label>Back</label><textarea class="form-control" id="flashBack" rows="3"></textarea></div><div class="mb-3"><label>Difficulty</label><select class="form-select" id="flashDifficulty"><option value="easy">Easy (7 days)</option><option value="medium" selected>Medium (3 days)</option><option value="hard">Hard (1 day)</option></select></div></div><div class="modal-footer"><button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button><button class="btn btn-primary" id="saveFlashBtn">Save</button></div></div></div></div>
+<div class="modal fade" id="techniqueModal"><div class="modal-dialog modal-lg"><div class="modal-content"><div class="modal-header"><h5 id="techniqueTitle">Study Technique</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body" id="techniqueContent"></div><div class="modal-footer"><button class="btn btn-primary" data-bs-dismiss="modal">Got it!</button></div></div></div></div>
+<div class="modal fade" id="focusModal"><div class="modal-dialog"><div class="modal-content"><div class="modal-header bg-dark text-white"><h5><i class="fas fa-eye"></i> Focus Mode</h5></div><div class="modal-body bg-dark text-white text-center"><div class="display-1 mb-4" id="focusTimer">25:00</div><div class="h4 mb-4" id="focusSubject">Deep Work Session</div><div class="mb-4"><div class="btn-group"><button class="btn btn-success" id="focusStart"><i class="fas fa-play"></i> Start</button><button class="btn btn-warning" id="focusPause"><i class="fas fa-pause"></i> Pause</button><button class="btn btn-danger" id="focusStop"><i class="fas fa-stop"></i> Stop</button></div></div><div class="alert alert-info"><i class="fas fa-lightbulb"></i> Minimize distractions and focus on your current task</div></div></div></div></div>
+<div class="modal fade" id="examModal"><div class="modal-dialog modal-lg"><div class="modal-content"><div class="modal-header bg-primary text-white"><h5><i class="fas fa-calendar-alt"></i> Manage Exam Dates</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div><div class="modal-body"><p class="text-muted mb-3">Set or update exam dates for your subjects</p><div id="examManagementList"></div></div><div class="modal-footer"><button class="btn btn-secondary" data-bs-dismiss="modal">Close</button><button class="btn btn-primary" id="saveExamsBtn">Save Changes</button></div></div></div></div>
+<div class="modal fade" id="gpaModal"><div class="modal-dialog modal-lg"><div class="modal-content"><div class="modal-header bg-success text-white"><h5><i class="fas fa-calculator"></i> Calculate CGPA and Percentage - RTU</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div><div class="modal-body"><div class="card mb-3"><div class="card-body"><h6 class="mb-3">Student Information</h6><div class="row g-3"><div class="col-md-6"><label class="form-label small">Your Name</label><input type="text" class="form-control" id="studentName" placeholder="Enter your name"></div><div class="col-md-6"><label class="form-label small">Roll Number</label><input type="text" class="form-control" id="rollNumber" placeholder="Enter roll number"></div><div class="col-md-12"><label class="form-label small">College</label><input type="text" class="form-control" id="collegeName" placeholder="Enter college name"></div><div class="col-md-6"><label class="form-label small">Semester</label><select class="form-select" id="semester"><option value="">Select Semester</option><option value="1">1st Semester</option><option value="2">2nd Semester</option><option value="3">3rd Semester</option><option value="4">4th Semester</option><option value="5">5th Semester</option><option value="6">6th Semester</option><option value="7">7th Semester</option><option value="8">8th Semester</option></select></div><div class="col-md-6"><label class="form-label small">Number of Subjects</label><select class="form-select" id="numSubjects"><option value="">Select Number of Subjects</option><option value="5">5 Subjects</option><option value="6">6 Subjects</option><option value="7">7 Subjects</option><option value="8">8 Subjects</option><option value="9">9 Subjects</option><option value="10">10 Subjects</option><option value="11">11 Subjects</option><option value="12">12 Subjects</option><option value="13">13 Subjects</option><option value="14">14 Subjects</option><option value="15">15 Subjects</option></select></div><div class="col-md-6"><label class="form-label small">Total Obtained Marks</label><input type="number" class="form-control" id="obtainedMarks" placeholder="Enter obtained marks" min="0"></div><div class="col-md-6"><label class="form-label small">Total Marks</label><input type="number" class="form-control" id="totalMarks" placeholder="Enter total marks" min="0"></div></div></div></div><div class="d-grid"><button class="btn btn-success btn-lg" onclick="calculateRTUGPA()"><i class="fas fa-calculator"></i> Calculate CGPA</button></div><div id="gpaResults" class="mt-3" style="display:none"><div class="card bg-light"><div class="card-body"><div class="row text-center"><div class="col-md-4"><h6 class="text-muted small mb-1">Percentage</h6><h3 class="text-primary mb-0" id="resultPercentage">0%</h3></div><div class="col-md-4"><h6 class="text-muted small mb-1">CGPA</h6><h3 class="text-success mb-0" id="resultCGPA">0.00</h3></div><div class="col-md-4"><h6 class="text-muted small mb-1">Division</h6><h5 class="mb-0" id="resultDivision">-</h5></div></div></div></div></div></div><div class="modal-footer"><button class="btn btn-secondary" data-bs-dismiss="modal">Close</button></div></div></div></div></div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+let data={subjects:[],active:null,streak:0,goals:[],studyTime:0,weeklyGoal:20,dailyStudyTime:0,weeklyStudyTime:0,lastStudyDate:''},pomInt,pomTime=1500,focusInt,focusTime=1500,studyInt,studyDisplayInt,studyStartTime=0,pausedSessionTime=0;
+const tips=['Take breaks every 25-30 min!','Review notes within 24h.','Study in short sessions.','Teach others to learn.','Use Feynman technique.','Create mind maps.','Practice active recall.','Get enough sleep!','Stay hydrated.','Set specific goals.','Focus on important 20%.','Eliminate distractions.','Study hard topics when alert.','Use mnemonics.','Test yourself regularly.'];
+function load(){const s=localStorage.getItem('studyData');if(s)try{data=JSON.parse(s)}catch(e){}}
+function save(){localStorage.setItem('studyData',JSON.stringify(data))}
+function renderSubs(){const l=document.getElementById('subList');l.innerHTML='';if(!data.subjects.length){l.innerHTML='<div class="p-3 text-muted">No subjects</div>';return}data.subjects.forEach(s=>{const a=document.createElement('div');a.className='list-group-item list-group-item-action';if(s.id===data.active)a.classList.add('active');const done=(s.topics||[]).filter(t=>t.done).length,total=(s.topics||[]).length,p=total?Math.round(done/total*100):0;const examInfo=s.examDate?`<div class="small text-danger"><i class="fas fa-calendar-check"></i> ${getDaysUntilExam(s.examDate)}</div>`:`<div class="small text-muted">${total-done} left</div>`;a.innerHTML=`<div class="d-flex justify-content-between align-items-center"><div style="cursor:pointer;flex-grow:1" onclick="selectSub('${s.id}')"><span class="subject-color-dot" style="background:${s.color}"></span><strong>${s.name}</strong>${examInfo}</div><div class="d-flex align-items-center gap-2"><strong>${p}%</strong><button class="btn btn-sm btn-danger" onclick="delSubject('${s.id}')"><i class="fas fa-trash"></i></button></div></div>`;l.appendChild(a)})}
+function getDaysUntilExam(examDate){if(!examDate)return'';const today=new Date();today.setHours(0,0,0,0);const exam=new Date(examDate);exam.setHours(0,0,0,0);const diff=Math.ceil((exam-today)/(1000*60*60*24));if(diff<0)return'Exam passed';if(diff===0)return'Exam today!';if(diff===1)return'Tomorrow!';if(diff<=7)return`${diff} days`;return`${diff} days`}
+function renderExams(){const l=document.getElementById('examList');l.innerHTML='';const exams=data.subjects.filter(s=>s.examDate||s.targetDate).map(s=>({name:s.name,examDate:s.examDate,targetDate:s.targetDate,color:s.color})).sort((a,b)=>new Date(a.examDate||a.targetDate)-new Date(b.examDate||b.targetDate));if(!exams.length){l.innerHTML='<div class="text-center text-muted py-3"><i class="fas fa-calendar-times fa-2x mb-2 opacity-50"></i><div class="small">No exams scheduled</div><div class="small text-muted">Click + to add</div></div>';return}exams.forEach(e=>{const today=new Date();today.setHours(0,0,0,0);let primaryDate=e.examDate||e.targetDate;let daysUntil=getDaysUntilExam(primaryDate);const examDate=new Date(primaryDate);examDate.setHours(0,0,0,0);const isPast=examDate<today;const isToday=examDate.getTime()===today.getTime();const diff=Math.ceil((examDate-today)/(1000*60*60*24));let badgeClass='bg-secondary';let urgencyColor='';if(isPast){badgeClass='bg-secondary'}else if(isToday){badgeClass='bg-danger';urgencyColor='border-danger'}else if(diff<=3){badgeClass='bg-danger';urgencyColor='border-danger'}else if(diff<=7){badgeClass='bg-warning';urgencyColor='border-warning'}else{badgeClass='bg-success';urgencyColor='border-success'}const d=document.createElement('div');d.className=`border-start border-3 ${urgencyColor} bg-light p-2 mb-2 rounded`;d.style.transition='all 0.2s';d.innerHTML=`<div class="d-flex justify-content-between align-items-center"><div style="flex:1"><div class="fw-bold text-dark small">${e.name}</div><div class="text-muted" style="font-size:0.7rem"><i class="far fa-calendar"></i> ${new Date(primaryDate).toLocaleDateString('en-US',{month:'short',day:'numeric'})}</div></div><span class="badge ${badgeClass} small">${daysUntil}</span></div>`;d.onmouseenter=()=>{d.style.transform='translateX(3px)';d.style.boxShadow='0 2px 8px rgba(0,0,0,0.1)'};d.onmouseleave=()=>{d.style.transform='translateX(0)';d.style.boxShadow='none'};l.appendChild(d)})}
+function render(){renderSubs();renderTopics();renderFlash();renderRes();updateStats();renderExams()}
+function renderTopics(f='all'){const l=document.getElementById('topics');l.innerHTML='';const s=data.subjects.find(x=>x.id===data.active);if(!s){document.getElementById('curSub').textContent='Select a Subject';updateTopicStats(0,0,0,0);return}document.getElementById('curSub').textContent=s.name;const all=s.topics||[];const done=all.filter(t=>t.done);const pending=all.filter(t=>!t.done);const overdue=all.filter(t=>{if(t.done)return false;const due=t.dueDate?new Date(t.dueDate):null;return due&&due<new Date()});updateTopicStats(all.length,done.length,pending.length,overdue.length);let ts=all;const filterTextEl=document.getElementById('topicFilterText');if(f==='pending'){ts=pending;if(filterTextEl)filterTextEl.textContent=`Showing ${pending.length} pending topic${pending.length!==1?'s':''}`}else if(f==='done'){ts=done;if(filterTextEl)filterTextEl.textContent=`Showing ${done.length} completed topic${done.length!==1?'s':''}`}else{if(filterTextEl)filterTextEl.textContent=`Showing all ${all.length} topic${all.length!==1?'s':''}`}if(!ts.length){const emptyMsg=f==='pending'?'🎉 Great! No pending topics':'📚 No completed topics yet';const emptyDesc=f==='pending'?'All your topics are complete!':'Start checking off topics as you complete them';l.innerHTML=`<div class="text-center py-5"><div class="display-1 mb-3">${f==='all'?'📝':'🎯'}</div><h5 class="text-muted">${f==='all'?'No Topics Yet':emptyMsg}</h5><p class="text-muted">${f==='all'?'Click "Add Topic" to get started!':emptyDesc}</p></div>`;const comp=all.filter(t=>t.done).length,tot=all.length,pct=tot?Math.round(comp/tot*100):0;document.getElementById('prog').style.width=pct+'%';document.getElementById('progText').textContent=pct+'% Complete';return}ts.forEach(t=>{const d=document.createElement('div');d.className='card mb-3';const due=t.dueDate?new Date(t.dueDate):null,over=due&&due<new Date()&&!t.done;const priorityColors={high:'danger',medium:'warning',low:'success'};const priorityIcons={high:'exclamation-circle',medium:'info-circle',low:'check-circle'};d.innerHTML=`<div class="card-body"><div class="d-flex align-items-start gap-3"><div class="form-check mt-1"><input class="form-check-input" type="checkbox" ${t.done?'checked':''} onchange="toggleTopic('${s.id}','${t.id}')" style="width:20px;height:20px;cursor:pointer"></div><div class="flex-grow-1"><h6 class="mb-2${t.done?' text-decoration-line-through text-muted':''}">${t.name}</h6><div class="d-flex flex-wrap gap-2 align-items-center"><span class="badge bg-${priorityColors[t.priority]} d-flex align-items-center gap-1"><i class="fas fa-${priorityIcons[t.priority]}"></i> ${t.priority.toUpperCase()}</span>${over?'<span class="badge bg-danger d-flex align-items-center gap-1"><i class="fas fa-exclamation-triangle"></i> OVERDUE</span>':''}${t.dueDate?`<span class="text-muted small"><i class="far fa-calendar"></i> ${new Date(t.dueDate).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}</span>`:''}${t.estimatedTime?`<span class="text-muted small"><i class="far fa-clock"></i> ${t.estimatedTime} min</span>`:''}</div></div><button class="btn btn-outline-danger btn-sm" onclick="delTopic('${s.id}','${t.id}')" title="Delete topic"><i class="fas fa-trash"></i></button></div></div>`;l.appendChild(d)});const comp=all.filter(t=>t.done).length,tot=all.length,pct=tot?Math.round(comp/tot*100):0;document.getElementById('prog').style.width=pct+'%';document.getElementById('progText').textContent=pct+'% Complete'}
+function updateTopicStats(total,done,pending,overdue){const totalEl=document.getElementById('topicTotal');const doneEl=document.getElementById('topicDone');const pendingEl=document.getElementById('topicPending');const overdueEl=document.getElementById('topicOverdue');if(totalEl)totalEl.textContent=total;if(doneEl)doneEl.textContent=done;if(pendingEl)pendingEl.textContent=pending;if(overdueEl)overdueEl.textContent=overdue}
+function renderFlash(){const l=document.getElementById('flashcards');l.innerHTML='';const s=data.subjects.find(x=>x.id===data.active);if(!s||!s.flashcards||!s.flashcards.length){l.innerHTML='<div class="col-12"><div class="alert alert-light text-center"><i class="fas fa-layer-group fa-3x text-muted mb-3"></i><h5>No Flashcards Yet</h5><p class="text-muted mb-0">Create your first flashcard to start learning!</p></div></div>';updateFlashcardStats(0,0,0);return}let easy=0,medium=0,hard=0;s.flashcards.forEach(f=>{if(f.difficulty==='easy')easy++;else if(f.difficulty==='medium')medium++;else hard++});updateFlashcardStats(s.flashcards.length,easy,hard);s.flashcards.forEach(f=>{const wrap=document.createElement('div');wrap.className='col-md-6 col-lg-4';const diffColor=f.difficulty==='easy'?'success':f.difficulty==='medium'?'warning':'danger';const diffIcon=f.difficulty==='easy'?'smile':f.difficulty==='medium'?'meh':'frown';wrap.innerHTML=`<div class="position-relative"><div class="card shadow-sm" style="overflow:hidden;"><div class="position-absolute top-0 end-0 m-2" style="z-index:100"><button class="btn btn-sm btn-outline-danger" onclick="event.stopPropagation();delFlash('${s.id}','${f.id}')" title="Delete"><i class="fas fa-trash"></i></button></div><div class="flashcard" onclick="this.classList.toggle('flipped')"><div class="flashcard-inner"><div class="flashcard-front"><div class="d-flex flex-column justify-content-center align-items-center text-center p-4" style="min-height:250px;background:var(--card);border:2px solid var(--accent);border-radius:12px;"><span class="badge bg-${diffColor} mb-3"><i class="far fa-${diffIcon}"></i> ${f.difficulty.toUpperCase()}</span><h5 class="mb-0">${f.front}</h5><div class="mt-auto pt-3"><small class="text-muted"><i class="fas fa-redo"></i> Click to flip</small></div></div></div><div class="flashcard-back"><div class="d-flex flex-column justify-content-center align-items-center text-center p-4" style="min-height:250px;background:linear-gradient(135deg,rgba(124,58,237,.1),rgba(14,165,233,.1));border:2px solid var(--accent);border-radius:12px;"><span class="badge bg-primary mb-3"><i class="fas fa-lightbulb"></i> ANSWER</span><h5 class="mb-0">${f.back}</h5><div class="mt-auto pt-3"><small class="text-muted"><i class="fas fa-redo"></i> Click to flip back</small></div></div></div></div></div></div></div>`;l.appendChild(wrap)})}
+function updateFlashcardStats(total,easy,hard){const totalEl=document.getElementById('flashcardTotal');const easyEl=document.getElementById('flashcardEasy');const hardEl=document.getElementById('flashcardHard');if(totalEl)totalEl.textContent=total;if(easyEl)easyEl.textContent=easy;if(hardEl)hardEl.textContent=hard}
+function renderRes(){const l=document.getElementById('resources');const countEl=document.getElementById('resourceCount');l.innerHTML='';const s=data.subjects.find(x=>x.id===data.active);if(!s||!s.resources||!s.resources.length){l.innerHTML='<div class="text-center py-5"><i class="fas fa-folder-open fa-4x text-muted mb-3"></i><h5 class="text-muted">No Resources Yet</h5><p class="text-muted">Add your first learning resource to get started!</p></div>';if(countEl)countEl.textContent='0';return}if(countEl)countEl.textContent=s.resources.length;s.resources.forEach((r,index)=>{const d=document.createElement('div');d.className='card mb-3 shadow-sm';const getDomain=url=>{try{return new URL(url).hostname.replace('www.','')}catch{return'Link'}};const getYouTubeId=url=>{const regExp=/^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;const match=url.match(regExp);return(match&&match[2].length===11)?match[2]:null};const getIcon=url=>{const domain=getDomain(url).toLowerCase();if(domain.includes('youtube')||domain.includes('youtu.be'))return'youtube';if(domain.includes('github'))return'github';if(domain.includes('stackoverflow'))return'stack-overflow';if(domain.includes('medium'))return'medium';if(domain.includes('wikipedia'))return'wikipedia-w';return'globe'};const icon=getIcon(r.url);const domain=getDomain(r.url);const colors=['primary','success','info','warning','danger','secondary'];const color=colors[index%colors.length];const youtubeId=getYouTubeId(r.url);const isYouTube=youtubeId!==null;d.innerHTML=`<div class="card-body"><div class="d-flex align-items-start gap-3 mb-3"><div class="flex-shrink-0"><div class="rounded-circle bg-${color} bg-opacity-10 p-3" style="width:60px;height:60px;display:flex;align-items:center;justify-content:center;"><i class="fab fa-${icon} fa-2x text-${color}"></i></div></div><div class="flex-grow-1"><h6 class="mb-1">${r.name}</h6><p class="text-muted small mb-2"><i class="fas fa-link"></i> ${domain}</p><div class="d-flex gap-2">${isYouTube?`<button class="btn btn-sm btn-danger" onclick="toggleVideo('video-${r.id}')"><i class="fab fa-youtube"></i> Play Video</button>`:''}<a href="${r.url}" target="_blank" class="btn btn-sm btn-outline-primary"><i class="fas fa-external-link-alt"></i> Open Link</a></div></div><div class="flex-shrink-0"><button class="btn btn-sm btn-outline-danger" onclick="delRes('${s.id}','${r.id}')" title="Delete resource"><i class="fas fa-trash"></i></button></div></div>${isYouTube?`<div id="video-${r.id}" style="display:none;"><div class="ratio ratio-16x9 mb-2"><iframe src="https://www.youtube.com/embed/${youtubeId}" title="${r.name}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div></div>`:''}</div>`;l.appendChild(d)})}
+function updateStats(){document.getElementById('statSub').textContent=data.subjects.length;document.getElementById('subCount').textContent=data.subjects.length;let d=0,p=0;data.subjects.forEach(s=>(s.topics||[]).forEach(t=>t.done?d++:p++));document.getElementById('statDone').textContent=d;document.getElementById('statPending').textContent=p;document.getElementById('streak').textContent=data.streak||0;renderGoals();updateAnalytics()}
+function updateTip(){document.getElementById('tip').textContent=tips[Math.floor(Math.random()*tips.length)]}
+function addSubject(){const n=document.getElementById('subName').value.trim(),c=document.getElementById('subColor').value,e=document.getElementById('subExamDate').value;if(!n){showToast('❌ Please enter a subject name');return}data.subjects.push({id:Date.now()+'',name:n,color:c,examDate:e,topics:[],flashcards:[],resources:[],notes:''});save();render();renderExams();document.getElementById('subName').value='';document.getElementById('subExamDate').value='';bootstrap.Modal.getInstance(document.getElementById('subModal')).hide()}
+function addTopic(){const n=document.getElementById('topName').value.trim(),p=document.getElementById('topPri').value,d=document.getElementById('topDue').value,t=document.getElementById('topTime').value;if(!n){showToast('❌ Please enter a topic name');return}const s=data.subjects.find(x=>x.id===data.active);if(!s){showToast('❌ Please select a subject first');return}if(!s.topics)s.topics=[];s.topics.push({id:Date.now()+'',name:n,priority:p,dueDate:d,estimatedTime:t,done:false});save();render();document.getElementById('topName').value='';bootstrap.Modal.getInstance(document.getElementById('topicModal')).hide()}
+function toggleTopic(sid,tid){const s=data.subjects.find(x=>x.id===sid),t=s.topics.find(x=>x.id===tid);t.done=!t.done;if(t.done){const today=new Date().toISOString().split('T')[0],last=localStorage.getItem('lastStudy');if(last!==today){if(last){const diff=Math.floor((new Date(today)-new Date(last))/86400000);data.streak=diff===1?(data.streak||0)+1:1}else data.streak=1;localStorage.setItem('lastStudy',today)}}save();render()}
+function delTopic(sid,tid){if(!confirm('Delete?'))return;const s=data.subjects.find(x=>x.id===sid);s.topics=s.topics.filter(x=>x.id!==tid);save();render()}
+function addFlashcard(){const f=document.getElementById('flashFront').value.trim(),b=document.getElementById('flashBack').value.trim(),d=document.getElementById('flashDifficulty').value;if(!f||!b){showToast('❌ Please fill in both the front and back of the flashcard');return}const s=data.subjects.find(x=>x.id===data.active);if(!s){showToast('❌ Please select a subject first');return}if(!s.flashcards)s.flashcards=[];const nextReview=new Date();nextReview.setDate(nextReview.getDate()+(d==='easy'?7:d==='medium'?3:1));s.flashcards.push({id:Date.now()+'',front:f,back:b,difficulty:d,nextReview:nextReview.toISOString(),reviewCount:0});save();render();document.getElementById('flashFront').value='';document.getElementById('flashBack').value='';bootstrap.Modal.getInstance(document.getElementById('flashModal')).hide()}
+function addResource(){const n=document.getElementById('resName').value.trim(),u=document.getElementById('resUrl').value.trim();if(!n||!u){alert('Fill both');return}const s=data.subjects.find(x=>x.id===data.active);if(!s){alert('Select subject');return}if(!s.resources)s.resources=[];s.resources.push({id:Date.now()+'',name:n,url:u});save();render();document.getElementById('resName').value='';document.getElementById('resUrl').value=''}
+function delRes(sid,rid){if(!confirm('Delete?'))return;const s=data.subjects.find(x=>x.id===sid);s.resources=s.resources.filter(x=>x.id!==rid);save();render()}
+function toggleVideo(videoId){const video=document.getElementById(videoId);const btn=event.target.closest('button');if(video){if(video.style.display==='none'||video.style.display===''){video.style.display='block';if(btn)btn.innerHTML='<i class="fab fa-youtube"></i> Hide Video'}else{video.style.display='none';if(btn)btn.innerHTML='<i class="fab fa-youtube"></i> Play Video'}}}
+function delSubject(sid){if(!confirm('Delete this subject and all its content?'))return;data.subjects=data.subjects.filter(x=>x.id!==sid);if(data.active===sid)data.active=null;save();render()}
+function delFlash(sid,fid){if(!confirm('Delete flashcard?'))return;const s=data.subjects.find(x=>x.id===sid);s.flashcards=s.flashcards.filter(x=>x.id!==fid);save();render()}
+function selectSub(sid){data.active=sid;const s=data.subjects.find(x=>x.id===sid);document.getElementById('notes').value=s.notes||'';const lastSavedEl=document.getElementById('lastSaved');if(lastSavedEl)lastSavedEl.innerHTML='<i class="fas fa-clock"></i> Not saved yet';updateNotesStats();render()}
+function saveNotes(){const s=data.subjects.find(x=>x.id===data.active);if(!s){showToast('❌ Please select a subject first');return}s.notes=document.getElementById('notes').value;save();const now=new Date();const timeStr=now.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});const lastSavedEl=document.getElementById('lastSaved');if(lastSavedEl)lastSavedEl.innerHTML=`<i class="fas fa-check-circle text-success"></i> Saved at ${timeStr}`;showToast('✅ Notes saved successfully!')}
+function updateNotesStats(){const notes=document.getElementById('notes').value;const charCount=notes.length;const wordCount=notes.trim().split(/\s+/).filter(w=>w.length>0).length;const charEl=document.getElementById('charCount');const wordEl=document.getElementById('wordCount');if(charEl)charEl.textContent=charCount;if(wordEl)wordEl.textContent=wordCount}
+let autoSaveTimeout;
+function autoSaveNotes(){clearTimeout(autoSaveTimeout);const autoSaveEnabled=document.getElementById('autoSave')?.checked;if(!autoSaveEnabled)return;autoSaveTimeout=setTimeout(()=>{const s=data.subjects.find(x=>x.id===data.active);if(s){s.notes=document.getElementById('notes').value;save();const now=new Date();const timeStr=now.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});const lastSavedEl=document.getElementById('lastSaved');if(lastSavedEl)lastSavedEl.innerHTML=`<i class="fas fa-sync-alt text-primary"></i> Auto-saved at ${timeStr}`}},2000)}
+function addGoal(){const g=document.getElementById('goalIn').value.trim();if(!g)return;if(!data.goals)data.goals=[];data.goals.push({id:Date.now()+'',text:g,done:false});save();renderGoals();document.getElementById('goalIn').value=''}
+function renderGoals(){const l=document.getElementById('goals');l.innerHTML='';if(!data.goals||!data.goals.length)return;data.goals.forEach(g=>{const d=document.createElement('div');d.className='d-flex align-items-center gap-2 mb-1';d.innerHTML=`<input type="checkbox" ${g.done?'checked':''} onchange="toggleGoal('${g.id}')"> <span${g.done?' style="text-decoration:line-through"':''}>${g.text}</span><button class="btn btn-sm btn-danger ms-auto" onclick="delGoal('${g.id}')"><i class="fas fa-trash"></i></button>`;l.appendChild(d)})}
+function toggleGoal(gid){const g=data.goals.find(x=>x.id===gid);g.done=!g.done;save();renderGoals()}
+function delGoal(gid){data.goals=data.goals.filter(x=>x.id!==gid);save();renderGoals()}
+function pomStart(){if(pomInt)return;pomInt=setInterval(()=>{pomTime--;if(pomTime<=0){clearInterval(pomInt);pomInt=null;alert('Pomodoro done!');pomTime=1500}updatePom()},1000)}
+function pomPause(){clearInterval(pomInt);pomInt=null}
+function pomReset(){clearInterval(pomInt);pomInt=null;pomTime=parseInt(document.getElementById('pomMin').value)*60;updatePom()}
+function updatePom(){const m=Math.floor(pomTime/60),s=pomTime%60;document.getElementById('timer').textContent=String(m).padStart(2,'0')+':'+String(s).padStart(2,'0')}
+function exportData(format='json'){if(format==='pdf'){generatePDF();closeExportMenu();showToast(`✅ Data exported as PDF!`);return}let content,filename,type;if(format==='json'){content=JSON.stringify(data,null,2);filename='study-hub.json';type='application/json'}else if(format==='csv'){content=generateCSV();filename='study-hub.csv';type='text/csv'}else if(format==='txt'){content=generateTXT();filename='study-hub.txt';type='text/plain'}const b=new Blob([content],{type}),u=URL.createObjectURL(b),a=document.createElement('a');a.href=u;a.download=filename;a.click();URL.revokeObjectURL(u);closeExportMenu();showToast(`✅ Data exported as ${format.toUpperCase()}!`)}
+function generateCSV(){let csv='Subject,Topic,Priority,Status,Due Date,Estimated Time\n';data.subjects.forEach(s=>{const topics=s.topics||[];if(topics.length===0){csv+=`"${s.name}","No topics","-","-","-","-"\n`}else{topics.forEach(t=>{const status=t.done?'Completed':'Pending';const dueDate=t.dueDate||'-';const priority=t.priority||'-';const time=t.estimatedTime?`${t.estimatedTime} min`:'-';csv+=`"${s.name}","${t.name}","${priority}","${status}","${dueDate}","${time}"\n`})}});return csv}
+function generateTXT(){let txt='='.repeat(60)+'\n';txt+='STUDY HUB - DATA EXPORT\n';txt+='='.repeat(60)+'\n\n';txt+=`Export Date: ${new Date().toLocaleString()}\n`;txt+=`Total Subjects: ${data.subjects.length}\n`;txt+=`Study Streak: ${data.streak||0} days\n`;txt+=`Weekly Goal: ${data.weeklyGoal||20} hours\n\n`;data.subjects.forEach((s,idx)=>{txt+=`\n${'-'.repeat(60)}\n`;txt+=`SUBJECT ${idx+1}: ${s.name}\n`;txt+=`${'-'.repeat(60)}\n`;if(s.examDate)txt+=`Exam Date: ${new Date(s.examDate).toLocaleDateString()}\n`;const topics=s.topics||[];const done=topics.filter(t=>t.done).length;const total=topics.length;const progress=total?Math.round((done/total)*100):0;txt+=`Progress: ${done}/${total} topics (${progress}%)\n\n`;if(topics.length>0){txt+='TOPICS:\n';topics.forEach((t,i)=>{txt+=`  ${i+1}. [${t.done?'✓':'○'}] ${t.name}\n`;txt+=`     Priority: ${t.priority||'medium'} | `;if(t.dueDate)txt+=`Due: ${new Date(t.dueDate).toLocaleDateString()} | `;txt+=`Time: ${t.estimatedTime||30} min\n`})}else{txt+='  No topics yet\n'}txt+=`\n`;const resources=s.resources||[];if(resources.length>0){txt+=`RESOURCES (${resources.length}):\n`;resources.forEach((r,i)=>{txt+=`  ${i+1}. ${r.name}\n     ${r.url}\n`})}const flashcards=s.flashcards||[];if(flashcards.length>0){txt+=`\nFLASHCARDS (${flashcards.length}):\n`;flashcards.forEach((f,i)=>{txt+=`  ${i+1}. ${f.front} | Difficulty: ${f.difficulty}\n`})}txt+=`\n`});if(data.goals&&data.goals.length>0){txt+=`\n${'='.repeat(60)}\n`;txt+='GOALS\n';txt+=`${'='.repeat(60)}\n`;data.goals.forEach((g,i)=>{txt+=`${i+1}. [${g.done?'✓':'○'}] ${g.text}\n`})}txt+=`\n${'='.repeat(60)}\n`;txt+='End of Report\n';txt+='='.repeat(60);return txt}
+function generatePDF(){const{jsPDF}=window.jspdf;const doc=new jsPDF();const pageWidth=doc.internal.pageSize.getWidth();const pageHeight=doc.internal.pageSize.getHeight();let y=20;doc.setFillColor(124,58,237);doc.rect(0,0,pageWidth,35,'F');doc.setTextColor(255,255,255);doc.setFontSize(24);doc.setFont(undefined,'bold');doc.text('STUDY HUB',pageWidth/2,15,{align:'center'});doc.setFontSize(12);doc.setFont(undefined,'normal');doc.text('Study Progress Report',pageWidth/2,25,{align:'center'});y=45;doc.setTextColor(0,0,0);doc.setFontSize(10);doc.text(`Generated: ${new Date().toLocaleString()}`,14,y);y+=10;doc.setFillColor(240,240,240);doc.rect(14,y-5,pageWidth-28,25,'F');doc.setFontSize(11);doc.setFont(undefined,'bold');doc.text('Overview',16,y);y+=8;doc.setFont(undefined,'normal');doc.setFontSize(9);doc.text(`Total Subjects: ${data.subjects.length}`,16,y);doc.text(`Study Streak: ${data.streak||0} days`,pageWidth/2,y);y+=6;let totalTopics=0,completedTopics=0;data.subjects.forEach(s=>{const topics=s.topics||[];totalTopics+=topics.length;completedTopics+=topics.filter(t=>t.done).length});doc.text(`Total Topics: ${totalTopics}`,16,y);doc.text(`Completed: ${completedTopics}`,pageWidth/2,y);y+=6;doc.text(`Pending: ${totalTopics-completedTopics}`,16,y);doc.text(`Weekly Goal: ${data.weeklyGoal||20} hours`,pageWidth/2,y);y+=15;data.subjects.forEach((s,idx)=>{if(y>pageHeight-40){doc.addPage();y=20}doc.setFillColor(124,58,237);doc.rect(14,y-5,pageWidth-28,8,'F');doc.setTextColor(255,255,255);doc.setFontSize(11);doc.setFont(undefined,'bold');doc.text(`${idx+1}. ${s.name}`,16,y);doc.setTextColor(0,0,0);y+=10;const topics=s.topics||[];const done=topics.filter(t=>t.done).length;const total=topics.length;const progress=total?Math.round((done/total)*100):0;doc.setFontSize(9);doc.setFont(undefined,'normal');if(s.examDate){doc.text(`Exam Date: ${new Date(s.examDate).toLocaleDateString()}`,16,y);y+=5}doc.text(`Progress: ${done}/${total} topics (${progress}%)`,16,y);y+=8;if(topics.length>0){doc.setFont(undefined,'bold');doc.text('Topics:',16,y);y+=5;doc.setFont(undefined,'normal');topics.forEach((t,i)=>{if(y>pageHeight-15){doc.addPage();y=20}const status=t.done?'[✓]':'[ ]';const priority=t.priority?`${t.priority}`.toUpperCase():'MEDIUM';doc.text(`${status} ${t.name}`,18,y);doc.setFontSize(8);doc.text(`Priority: ${priority}`,pageWidth-60,y);y+=5;if(t.dueDate){doc.text(`Due: ${new Date(t.dueDate).toLocaleDateString()}`,22,y);y+=4}doc.setFontSize(9);y+=2});y+=3}else{doc.text('No topics yet',18,y);y+=6}const resources=s.resources||[];if(resources.length>0){if(y>pageHeight-20){doc.addPage();y=20}doc.setFont(undefined,'bold');doc.text(`Resources (${resources.length}):`,16,y);y+=5;doc.setFont(undefined,'normal');doc.setFontSize(8);resources.forEach((r,i)=>{if(y>pageHeight-15){doc.addPage();y=20}doc.text(`${i+1}. ${r.name}`,18,y);y+=4});doc.setFontSize(9);y+=3}y+=5});if(data.goals&&data.goals.length>0){if(y>pageHeight-30){doc.addPage();y=20}doc.setFillColor(124,58,237);doc.rect(14,y-5,pageWidth-28,8,'F');doc.setTextColor(255,255,255);doc.setFontSize(11);doc.setFont(undefined,'bold');doc.text('Goals',16,y);doc.setTextColor(0,0,0);y+=10;doc.setFont(undefined,'normal');doc.setFontSize(9);data.goals.forEach((g,i)=>{if(y>pageHeight-15){doc.addPage();y=20}const status=g.done?'[✓]':'[ ]';doc.text(`${status} ${g.text}`,18,y);y+=5})}doc.setFontSize(8);doc.setTextColor(150,150,150);doc.text('Generated by Study Hub - Your Complete Study Companion',pageWidth/2,pageHeight-10,{align:'center'});doc.save('study-hub-report.pdf')}
+function toggleExportMenu(){const menu=document.getElementById('exportMenu');if(menu){menu.classList.toggle('show')}}
+function closeExportMenu(){const menu=document.getElementById('exportMenu');if(menu){menu.classList.remove('show')}}
+function importData(e){const f=e.target.files[0];if(!f)return;if(!f.name.endsWith('.json')){showToast('❌ Please select a valid JSON file');e.target.value='';return}const r=new FileReader();r.onload=ev=>{try{const importedData=JSON.parse(ev.target.result);if(!importedData.subjects||!Array.isArray(importedData.subjects)){showToast('❌ Invalid data format. Please select a valid Study Hub backup file.');e.target.value='';return}const confirmed=confirm(`Import Data?\n\n📊 Subjects: ${importedData.subjects.length}\n🔥 Streak: ${importedData.streak||0} days\n\n⚠️ This will replace all your current data. Continue?`);if(!confirmed){e.target.value='';return}data=importedData;if(!data.goals)data.goals=[];if(!data.studyTime)data.studyTime=0;if(!data.weeklyGoal)data.weeklyGoal=20;save();render();renderExams();updateAnalytics();showToast('✅ Data imported successfully! '+data.subjects.length+' subject(s) loaded.');console.log('Imported data:',data)}catch(error){console.error('Import error:',error);showToast('❌ Failed to import. File may be corrupted or in wrong format.');e.target.value='';return}finally{e.target.value=''}};r.onerror=()=>{showToast('❌ Error reading file. Please try again.');e.target.value=''};r.readAsText(f)}
+function renderExamManagementList(){const l=document.getElementById('examManagementList');l.innerHTML='';if(!data.subjects.length){l.innerHTML='<div class="alert alert-warning"><i class="fas fa-info-circle"></i> No subjects yet. Add subjects first to set exam dates.</div>';return}data.subjects.forEach(s=>{const card=document.createElement('div');card.className='card mb-3 shadow-sm';card.innerHTML=`<div class="card-body"><div class="mb-3"><div class="d-flex align-items-center gap-2 mb-2"><span class="subject-color-dot" style="background:${s.color}"></span><h6 class="mb-0">${s.name}</h6></div></div><div class="row g-3"><div class="col-md-6"><label class="form-label small fw-bold text-danger"><i class="fas fa-calendar-check"></i> Exam Date</label><input type="date" class="form-control" id="exam-${s.id}" value="${s.examDate||''}" placeholder="When is the exam?"></div><div class="col-md-6"><label class="form-label small fw-bold text-success"><i class="fas fa-flag-checkered"></i> Target Completion</label><input type="date" class="form-control" id="target-${s.id}" value="${s.targetDate||''}" placeholder="When to finish prep?"></div></div><div class="mt-2"><button class="btn btn-outline-danger btn-sm" onclick="clearExamDates('${s.id}')"><i class="fas fa-times"></i> Clear Both</button></div></div>`;l.appendChild(card)})}
+function clearExamDates(subId){const examInput=document.getElementById('exam-'+subId);const targetInput=document.getElementById('target-'+subId);if(examInput)examInput.value='';if(targetInput)targetInput.value=''}
+function saveExamChanges(){data.subjects.forEach(s=>{const examInput=document.getElementById('exam-'+s.id);const targetInput=document.getElementById('target-'+s.id);if(examInput){s.examDate=examInput.value||''}if(targetInput){s.targetDate=targetInput.value||''}});save();render();renderExams();bootstrap.Modal.getInstance(document.getElementById('examModal')).hide();showToast('✅ Exam dates updated successfully!')}
+function updateAnalytics(){const today=new Date().toISOString().split('T')[0];if(data.lastStudyDate!==today){data.dailyStudyTime=0;data.lastStudyDate=today}const weekStart=getWeekStart();if(!data.weeklyStudyTime||data.lastWeekStart!==weekStart){data.weeklyStudyTime=0;data.lastWeekStart=weekStart}updateStudyTimeDisplay();document.getElementById('weeklyGoalDisplay').textContent=`${data.weeklyGoal}h`;const weeklyProgress=Math.min((data.weeklyStudyTime/(data.weeklyGoal*60))*100,100);document.getElementById('weeklyProgress').style.width=weeklyProgress+'%';const progressText=Math.round(weeklyProgress)+'%';document.getElementById('weeklyProgressText').textContent=progressText;const weeklyGoalInput=document.getElementById('weeklyGoalInput');if(weeklyGoalInput)weeklyGoalInput.value=data.weeklyGoal;updateProgressMessage(weeklyProgress);updateAnalyticsMetrics();renderSubjectPerformance();updateLearningInsights()}
+function updateStudyTimeDisplay(){const dailyHours=Math.floor(data.dailyStudyTime/60);const dailyMins=data.dailyStudyTime%60;document.getElementById('studyTimeDisplay').textContent=dailyHours>0||dailyMins>0?`${dailyHours}h ${dailyMins}m`:'Start studying!'}
+function updateStudyDisplay(){if(!studyStartTime){document.getElementById('studyTimeDisplay').textContent='0h 0m 0s';return}const currentSegmentSeconds=Math.floor((Date.now()-studyStartTime)/1000);const currentSegmentTime=Math.floor(currentSegmentSeconds/60);const totalSessionTime=pausedSessionTime+currentSegmentTime;const hours=Math.floor(totalSessionTime/60);const mins=totalSessionTime%60;const seconds=currentSegmentSeconds%60;document.getElementById('studyTimeDisplay').textContent=`${hours}h ${mins}m ${seconds}s`;document.getElementById('studyTimeDisplay').style.color='#28a745';document.getElementById('studyTimeDisplay').style.fontWeight='bold'}
+function getWeekStart(){const today=new Date();const day=today.getDay();const diff=today.getDate()-day+(day===0?-6:1);return new Date(today.setDate(diff)).toISOString().split('T')[0]}
+function updateProgressMessage(progress){const messages=['Keep going! You\'re building great study habits 💪','Great start! Every minute counts 📚','You\'re making progress! Stay consistent 🎯','Awesome! You\'re on track 🚀','Excellent work! Keep it up 🌟','Outstanding! You\'re crushing your goals 🏆'];let messageIndex=Math.floor(progress/20);if(messageIndex>=messages.length)messageIndex=messages.length-1;const messageEl=document.getElementById('weeklyProgressMessage');if(messageEl)messageEl.textContent=messages[messageIndex]}
+function updateAnalyticsMetrics(){const streak=document.getElementById('analyticsStreak');if(streak)streak.textContent=data.streak||0;let completed=0,pending=0;data.subjects.forEach(s=>(s.topics||[]).forEach(t=>t.done?completed++:pending++));const completedEl=document.getElementById('analyticsCompleted');const pendingEl=document.getElementById('analyticsPending');const subjectsEl=document.getElementById('analyticsSubjects');if(completedEl)completedEl.textContent=completed;if(pendingEl)pendingEl.textContent=pending;if(subjectsEl)subjectsEl.textContent=data.subjects.length}
+function renderSubjectPerformance(){const container=document.getElementById('subjectPerformance');if(!container)return;if(!data.subjects.length){container.innerHTML='<div class="alert alert-info"><i class="fas fa-info-circle"></i> Add subjects and complete topics to see performance breakdown</div>';return}let html='';data.subjects.forEach(s=>{const topics=s.topics||[];const total=topics.length;const done=topics.filter(t=>t.done).length;const progress=total>0?Math.round((done/total)*100):0;const color=s.color||'#7c3aed';html+=`<div class="mb-3"><div class="d-flex justify-content-between align-items-center mb-2"><div><span class="subject-color-dot" style="background:${color}"></span><strong>${s.name}</strong></div><div class="text-end"><span class="badge bg-primary">${done}/${total}</span> <strong class="text-success">${progress}%</strong></div></div><div class="progress" style="height:10px;"><div class="progress-bar" style="width:${progress}%;background:${color}"></div></div></div>`});container.innerHTML=html}
+function updateLearningInsights(){const container=document.getElementById('learningInsights');if(!container)return;let completed=0,total=0;data.subjects.forEach(s=>{const topics=s.topics||[];total+=topics.length;completed+=topics.filter(t=>t.done).length});if(total===0){container.innerHTML='<div class="alert alert-light border"><h6 class="alert-heading"><i class="fas fa-star text-warning"></i> Getting Started</h6><ul class="small mb-0"><li>Add your subjects to begin tracking</li><li>Break topics into manageable chunks</li><li>Set realistic weekly study goals</li><li>Use the Pomodoro timer for focused sessions</li></ul></div><div class="alert alert-primary border-0"><i class="fas fa-quote-left"></i> <em>"Consistency beats perfection. Study a little every day!"</em></div>';return}const completionRate=Math.round((completed/total)*100);const streak=data.streak||0;let html='<div class="alert alert-success border-0 mb-2"><h6><i class="fas fa-trophy text-warning"></i> Your Progress</h6><ul class="small mb-0">';if(streak>0)html+=`<li>🔥 <strong>${streak}-day streak!</strong> Keep it going!</li>`;html+=`<li>✅ Completed <strong>${completed} out of ${total}</strong> topics (${completionRate}%)</li>`;if(completionRate>=75)html+='<li>🌟 Excellent progress! You\'re on track to finish strong!</li>';else if(completionRate>=50)html+='<li>💪 Great work! Keep maintaining this momentum!</li>';else if(completionRate>=25)html+='<li>📚 Good start! Stay consistent to reach your goals!</li>';else html+='<li>🎯 Just getting started! Break down topics into smaller tasks!</li>';html+='</ul></div>';const weeklyHours=Math.floor(data.weeklyStudyTime/60);const weeklyGoalHours=data.weeklyGoal||20;if(weeklyHours>0){const weeklyPct=Math.round((weeklyHours/weeklyGoalHours)*100);html+=`<div class="alert alert-info border-0 mb-2"><h6><i class="fas fa-clock"></i> This Week</h6><p class="small mb-0">You\'ve studied <strong>${weeklyHours} hours</strong> out of your ${weeklyGoalHours}-hour goal (${weeklyPct}%)</p></div>`}html+='<div class="alert alert-primary border-0"><i class="fas fa-quote-left"></i> <em>"Success is the sum of small efforts repeated day in and day out!"</em></div>';container.innerHTML=html}
+function setWeeklyGoal(){const goalInput=document.getElementById('weeklyGoalInput')||document.getElementById('weeklyGoal');const goal=parseInt(goalInput.value);if(goal&&goal>0&&goal<=168){data.weeklyGoal=goal;save();updateAnalytics();showToast('✅ Weekly goal updated to '+goal+' hours!')}else{showToast('❌ Please enter a valid goal (1-168 hours)')}}
+function showToast(message){const toast=document.createElement('div');toast.className='position-fixed top-0 end-0 m-3 alert alert-info alert-dismissible fade show';toast.style.zIndex='9999';toast.innerHTML=`${message}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>`;document.body.appendChild(toast);setTimeout(()=>{if(toast.parentNode)toast.parentNode.removeChild(toast)},3000)}
+let currentCalendarDate=new Date();
+function renderCalendar(){const year=currentCalendarDate.getFullYear();const month=currentCalendarDate.getMonth();const monthNames=['January','February','March','April','May','June','July','August','September','October','November','December'];document.getElementById('calendarMonth').textContent=`${monthNames[month]} ${year}`;const firstDay=new Date(year,month,1).getDay();const daysInMonth=new Date(year,month+1,0).getDate();const daysInPrevMonth=new Date(year,month,0).getDate();const today=new Date();today.setHours(0,0,0,0);const calendarView=document.getElementById('calendarView');let html='<div class="calendar-grid">';const dayHeaders=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];dayHeaders.forEach(day=>{html+=`<div class="calendar-day-header">${day}</div>`});const events=getCalendarEvents();for(let i=firstDay-1;i>=0;i--){const day=daysInPrevMonth-i;html+=`<div class="calendar-day other-month"><div class="calendar-day-number">${day}</div></div>`}for(let day=1;day<=daysInMonth;day++){const currentDate=new Date(year,month,day);currentDate.setHours(0,0,0,0);const isToday=currentDate.getTime()===today.getTime();const dateStr=currentDate.toISOString().split('T')[0];const dayEvents=events.filter(e=>e.date===dateStr);html+=`<div class="calendar-day ${isToday?'today':''}" onclick="showDateDetails('${dateStr}')" data-date="${dateStr}"><div class="calendar-day-number">${day}</div>`;dayEvents.slice(0,3).forEach(event=>{html+=`<div class="calendar-event event-${event.type}" title="${event.title}">${event.subject}</div>`});if(dayEvents.length>3){html+=`<div class="text-muted small">+${dayEvents.length-3} more</div>`}html+=`</div>`}const remainingDays=42-(firstDay+daysInMonth);for(let day=1;day<=remainingDays;day++){html+=`<div class="calendar-day other-month"><div class="calendar-day-number">${day}</div></div>`}html+='</div>';calendarView.innerHTML=html}
+function getCalendarEvents(){const events=[];data.subjects.forEach(s=>{if(s.examDate){events.push({date:s.examDate,type:'exam',title:`${s.name} Exam`,icon:'📅',subject:s.name})}if(s.targetDate){events.push({date:s.targetDate,type:'target',title:`${s.name} Prep Target`,icon:'🎯',subject:s.name})}if(s.topics){s.topics.forEach(t=>{if(t.dueDate&&!t.done){events.push({date:t.dueDate,type:'topic',title:t.name,icon:'⏰',subject:t.name})}})}});return events}
+function showDateDetails(dateStr){const events=getCalendarEvents().filter(e=>e.date===dateStr);const date=new Date(dateStr);const formattedDate=date.toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'});let html=`<div class="modal fade" id="dateModal" tabindex="-1"><div class="modal-dialog modal-lg"><div class="modal-content"><div class="modal-header bg-primary text-white"><h5 class="modal-title"><i class="fas fa-calendar-day"></i> ${formattedDate}</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div><div class="modal-body">`;html+=`<div class="mb-3"><div class="d-flex gap-2 justify-content-center flex-wrap"><button class="btn btn-sm btn-primary" onclick="addTopicOnDate('${dateStr}')"><i class="fas fa-plus"></i> Add Topic</button><button class="btn btn-sm btn-danger" onclick="addExamOnDate('${dateStr}')"><i class="fas fa-calendar-check"></i> Set Exam</button><button class="btn btn-sm btn-success" onclick="addTargetOnDate('${dateStr}')"><i class="fas fa-flag-checkered"></i> Set Target</button></div></div><hr>`;if(events.length===0){html+=`<div class="alert alert-info"><i class="fas fa-info-circle"></i> No events scheduled for this date</div>`}else{html+=`<h6 class="mb-3">Scheduled Events:</h6><div class="list-group">`;events.forEach(e=>{let badgeClass='bg-primary';if(e.type==='exam')badgeClass='bg-danger';else if(e.type==='target')badgeClass='bg-success';else if(e.type==='topic')badgeClass='bg-warning';html+=`<div class="list-group-item"><div class="d-flex justify-content-between align-items-center"><div><span class="badge ${badgeClass} me-2">${e.icon}</span><strong>${e.title}</strong></div></div></div>`});html+=`</div>`}html+=`</div><div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button></div></div></div></div>`;const existingModal=document.getElementById('dateModal');if(existingModal)existingModal.remove();document.body.insertAdjacentHTML('beforeend',html);const modal=new bootstrap.Modal(document.getElementById('dateModal'));modal.show();document.getElementById('dateModal').addEventListener('hidden.bs.modal',()=>{document.getElementById('dateModal').remove()})}
+function addTopicOnDate(dateStr){bootstrap.Modal.getInstance(document.getElementById('dateModal')).hide();if(!data.active){showToast('❌ Please select a subject first');return}document.getElementById('topDue').value=dateStr;new bootstrap.Modal(document.getElementById('topicModal')).show()}
+function addExamOnDate(dateStr){bootstrap.Modal.getInstance(document.getElementById('dateModal')).hide();const selectHtml=`<div class="modal fade" id="selectSubjectModal" tabindex="-1"><div class="modal-dialog"><div class="modal-content"><div class="modal-header bg-danger text-white"><h5 class="modal-title"><i class="fas fa-calendar-check"></i> Set Exam Date</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div><div class="modal-body"><p>Select a subject to set exam date:</p><div class="list-group" id="subjectSelectList"></div></div></div></div></div>`;const existing=document.getElementById('selectSubjectModal');if(existing)existing.remove();document.body.insertAdjacentHTML('beforeend',selectHtml);const list=document.getElementById('subjectSelectList');if(!data.subjects.length){list.innerHTML='<div class="alert alert-warning">No subjects available. Please add subjects first.</div>'}else{data.subjects.forEach(s=>{const item=document.createElement('button');item.className='list-group-item list-group-item-action';item.innerHTML=`<span class="subject-color-dot" style="background:${s.color}"></span><strong>${s.name}</strong>`;item.onclick=()=>{s.examDate=dateStr;save();render();renderCalendar();bootstrap.Modal.getInstance(document.getElementById('selectSubjectModal')).hide();showToast(`✅ Exam date set for ${s.name}`)};list.appendChild(item)})}new bootstrap.Modal(document.getElementById('selectSubjectModal')).show();document.getElementById('selectSubjectModal').addEventListener('hidden.bs.modal',()=>{document.getElementById('selectSubjectModal').remove()})}
+function addTargetOnDate(dateStr){bootstrap.Modal.getInstance(document.getElementById('dateModal')).hide();const selectHtml=`<div class="modal fade" id="selectTargetModal" tabindex="-1"><div class="modal-dialog"><div class="modal-content"><div class="modal-header bg-success text-white"><h5 class="modal-title"><i class="fas fa-flag-checkered"></i> Set Target Date</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div><div class="modal-body"><p>Select a subject to set target completion date:</p><div class="list-group" id="targetSelectList"></div></div></div></div></div>`;const existing=document.getElementById('selectTargetModal');if(existing)existing.remove();document.body.insertAdjacentHTML('beforeend',selectHtml);const list=document.getElementById('targetSelectList');if(!data.subjects.length){list.innerHTML='<div class="alert alert-warning">No subjects available. Please add subjects first.</div>'}else{data.subjects.forEach(s=>{const item=document.createElement('button');item.className='list-group-item list-group-item-action';item.innerHTML=`<span class="subject-color-dot" style="background:${s.color}"></span><strong>${s.name}</strong>`;item.onclick=()=>{s.targetDate=dateStr;save();render();renderCalendar();bootstrap.Modal.getInstance(document.getElementById('selectTargetModal')).hide();showToast(`✅ Target date set for ${s.name}`)};list.appendChild(item)})}new bootstrap.Modal(document.getElementById('selectTargetModal')).show();document.getElementById('selectTargetModal').addEventListener('hidden.bs.modal',()=>{document.getElementById('selectTargetModal').remove()})}
+function prevMonth(){currentCalendarDate.setMonth(currentCalendarDate.getMonth()-1);renderCalendar()}
+function nextMonth(){currentCalendarDate.setMonth(currentCalendarDate.getMonth()+1);renderCalendar()}
+function goToToday(){currentCalendarDate=new Date();renderCalendar()}
+function calculateRTUGPA(){const obtainedMarks=parseFloat(document.getElementById('obtainedMarks').value);const totalMarks=parseFloat(document.getElementById('totalMarks').value);if(!obtainedMarks||!totalMarks||totalMarks<=0){showToast('❌ Please enter valid marks');return}if(obtainedMarks>totalMarks){showToast('❌ Obtained marks cannot be greater than total marks');return}const percentage=(obtainedMarks/totalMarks)*100;const cgpa=parseFloat((percentage/10).toFixed(2));let division='';let divisionColor='';if(cgpa>=7){division='I Division with Distinction';divisionColor='text-success'}else if(cgpa>=6){division='I Division';divisionColor='text-primary'}else if(cgpa>=5){division='II Division';divisionColor='text-info'}else if(cgpa>=4){division='Pass';divisionColor='text-warning'}else{division='Fail';divisionColor='text-danger'}document.getElementById('resultPercentage').textContent=percentage.toFixed(2)+'%';document.getElementById('resultCGPA').textContent=cgpa.toFixed(2);const divElement=document.getElementById('resultDivision');divElement.textContent=division;divElement.className='mb-0 '+divisionColor;document.getElementById('gpaResults').style.display='block';showToast('✅ CGPA Calculated Successfully! Formula: CGPA = Percentage ÷ 10')}
+function startStudySession(){studyStartTime=Date.now();studyInt=setInterval(()=>{data.dailyStudyTime++;data.weeklyStudyTime++;save()},60000);studyDisplayInt=setInterval(updateStudyDisplay,1000);document.getElementById('startStudyBtn').classList.add('d-none');document.getElementById('pauseStudyBtn').classList.remove('d-none');document.getElementById('stopStudyBtn').classList.remove('d-none');updateStudyDisplay();const message=pausedSessionTime>0?'▶️ Study session resumed! Back to focus mode!':'⏰ Study session started! Focus time begins now!';showToast(message)}
+function pauseStudySession(){clearInterval(studyInt);clearInterval(studyDisplayInt);studyInt=null;studyDisplayInt=null;pausedSessionTime+=Math.floor((Date.now()-studyStartTime)/60000);document.getElementById('studyTimeDisplay').style.color='#ffc107';document.getElementById('studyTimeDisplay').style.fontWeight='bold';document.getElementById('startStudyBtn').classList.remove('d-none');document.getElementById('pauseStudyBtn').classList.add('d-none');document.getElementById('stopStudyBtn').classList.remove('d-none');showToast('⏸️ Study session paused. Take your break!')}
+function stopStudySession(){if(studyInt)clearInterval(studyInt);if(studyDisplayInt)clearInterval(studyDisplayInt);studyInt=null;studyDisplayInt=null;const currentSessionTime=studyStartTime>0?Math.floor((Date.now()-studyStartTime)/60000):0;const totalSessionTime=pausedSessionTime+currentSessionTime;data.dailyStudyTime+=totalSessionTime;data.weeklyStudyTime+=totalSessionTime;studyStartTime=0;pausedSessionTime=0;document.getElementById('startStudyBtn').classList.remove('d-none');document.getElementById('pauseStudyBtn').classList.add('d-none');document.getElementById('stopStudyBtn').classList.add('d-none');document.getElementById('studyTimeDisplay').style.color='';document.getElementById('studyTimeDisplay').style.fontWeight='';save();updateAnalytics();showToast(`🎉 Great job! You studied for ${totalSessionTime} minutes!`);updateStudyTimeDisplay()}
+function showTechnique(type){const techniques={feynman:{title:'Feynman Technique',content:'<h5>The Feynman Technique</h5><ol><li><strong>Choose a concept</strong> you want to learn</li><li><strong>Explain it in simple terms</strong> as if teaching a child</li><li><strong>Identify gaps</strong> in your understanding</li><li><strong>Go back to source material</strong> to fill gaps</li><li><strong>Simplify and use analogies</strong></li></ol><div class="alert alert-success"><i class="fas fa-lightbulb"></i> <strong>Tip:</strong> If you can\'t explain it simply, you don\'t understand it well enough!</div>'},spaced:{title:'Spaced Repetition',content:'<h5>Spaced Repetition System</h5><p>Review material at increasing intervals:</p><ul><li><strong>Day 1:</strong> Learn new material</li><li><strong>Day 2:</strong> First review</li><li><strong>Day 4:</strong> Second review</li><li><strong>Day 8:</strong> Third review</li><li><strong>Day 16:</strong> Fourth review</li></ul><div class="alert alert-info"><i class="fas fa-brain"></i> <strong>Science:</strong> This method leverages the psychological spacing effect for long-term retention.</div>'},active:{title:'Active Recall',content:'<h5>Active Recall Methods</h5><ul><li><strong>Flashcards:</strong> Test yourself without looking at answers</li><li><strong>Practice tests:</strong> Simulate exam conditions</li><li><strong>Summarization:</strong> Write summaries from memory</li><li><strong>Teaching:</strong> Explain concepts to others</li><li><strong>Question generation:</strong> Create your own questions</li></ul><div class="alert alert-warning"><i class="fas fa-exclamation-triangle"></i> <strong>Avoid:</strong> Passive re-reading and highlighting - they create illusion of knowledge!</div>'},pomodoro:{title:'Pomodoro Technique',content:'<h5>Pomodoro Method</h5><ol><li><strong>25 minutes:</strong> Focused work session</li><li><strong>5 minutes:</strong> Short break</li><li><strong>Repeat</strong> 3-4 cycles</li><li><strong>15-30 minutes:</strong> Long break</li></ol><div class="alert alert-info"><i class="fas fa-clock"></i> <strong>Benefits:</strong> Maintains focus, reduces mental fatigue, and maintains motivation throughout study sessions.</div>'}};const t=techniques[type];if(t){document.getElementById('techniqueTitle').textContent=t.title;document.getElementById('techniqueContent').innerHTML=t.content;new bootstrap.Modal(document.getElementById('techniqueModal')).show()}}
+document.getElementById('theme').addEventListener('change',e=>{document.documentElement.setAttribute('data-bs-theme',e.target.checked?'dark':'light');localStorage.setItem('theme',e.target.checked?'dark':'light')});
+document.getElementById('search').addEventListener('input',e=>{const q=e.target.value.toLowerCase();if(!q){render();return}const s=data.subjects.find(x=>x.id===data.active);if(!s||!s.topics)return;const f=s.topics.filter(t=>t.name.toLowerCase().includes(q));renderTopics();});
+document.getElementById('saveSubBtn').addEventListener('click',addSubject);
+document.getElementById('addTopicBtn').addEventListener('click',()=>{if(!data.active){alert('Select subject');return}new bootstrap.Modal(document.getElementById('topicModal')).show()});
+document.getElementById('saveTopicBtn').addEventListener('click',addTopic);
+document.getElementById('addFlashBtn').addEventListener('click',()=>{if(!data.active){alert('Select subject');return}new bootstrap.Modal(document.getElementById('flashModal')).show()});
+document.getElementById('saveFlashBtn').addEventListener('click',addFlashcard);
+document.getElementById('addResBtn').addEventListener('click',addResource);
+document.getElementById('saveNotesBtn').addEventListener('click',saveNotes);
+document.getElementById('addGoalBtn').addEventListener('click',addGoal);
+document.getElementById('pomStart').addEventListener('click',pomStart);
+document.getElementById('pomPause').addEventListener('click',pomPause);
+document.getElementById('pomReset').addEventListener('click',pomReset);
+document.getElementById('filterAll').addEventListener('click',()=>renderTopics('all'));
+document.getElementById('filterPending').addEventListener('click',()=>renderTopics('pending'));
+document.getElementById('filterDone').addEventListener('click',()=>renderTopics('done'));
+document.getElementById('calPrevMonth').addEventListener('click',prevMonth);
+document.getElementById('calNextMonth').addEventListener('click',nextMonth);
+document.getElementById('calToday').addEventListener('click',goToToday);
+document.getElementById('exportBtn').addEventListener('click',(e)=>{e.stopPropagation();toggleExportMenu()});
+document.getElementById('importBtn').addEventListener('click',()=>document.getElementById('importFile').click());
+document.getElementById('importFile').addEventListener('change',importData);
+document.addEventListener('click',(e)=>{const menu=document.getElementById('exportMenu');const btn=document.getElementById('exportBtn');if(menu&&!menu.contains(e.target)&&!btn.contains(e.target)){closeExportMenu()}});
+document.getElementById('examModal').addEventListener('show.bs.modal',renderExamManagementList);
+document.getElementById('saveExamsBtn').addEventListener('click',saveExamChanges);
+
+document.getElementById('startStudyBtn').addEventListener('click', startStudySession);
+document.getElementById('pauseStudyBtn').addEventListener('click', pauseStudySession);
+document.getElementById('stopStudyBtn').addEventListener('click', stopStudySession);
+
+document.getElementById('focusStart').addEventListener('click',()=>{focusTime=parseInt(document.getElementById('pomMin').value)*60;focusInt=setInterval(()=>{focusTime--;if(focusTime<=0){clearInterval(focusInt);focusInt=null;alert('Focus session complete!');focusTime=1500}updateFocusTimer()},1000)});
+document.getElementById('focusPause').addEventListener('click',()=>{clearInterval(focusInt);focusInt=null});
+document.getElementById('focusStop').addEventListener('click',()=>{clearInterval(focusInt);focusInt=null;focusTime=1500;updateFocusTimer();bootstrap.Modal.getInstance(document.getElementById('focusModal')).hide()});
+function updateFocusTimer(){const m=Math.floor(focusTime/60),s=focusTime%60;document.getElementById('focusTimer').textContent=String(m).padStart(2,'0')+':'+String(s).padStart(2,'0')}
+const savedTheme=localStorage.getItem('theme');if(savedTheme==='dark'){document.getElementById('theme').checked=true;document.documentElement.setAttribute('data-bs-theme','dark')}
+document.getElementById('notes').addEventListener('input',()=>{updateNotesStats();autoSaveNotes()});
+document.querySelectorAll('button[data-bs-target="#tab6"]').forEach(btn=>{btn.addEventListener('click',()=>{setTimeout(renderCalendar,100)})});
+load();render();updateTip();updateAnalytics();setInterval(updateTip,300000);setInterval(updateAnalytics,60000);updateNotesStats();renderCalendar();
+</script>
+</body>
+</html>
