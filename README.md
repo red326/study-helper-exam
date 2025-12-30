@@ -1,5 +1,7 @@
 # 🎓 Ultimate Study Hub - Student Edition
 
+Demo https://study-helper-exam.netlify.app/
+
 A comprehensive, feature-rich web application designed to be the ultimate study companion for students. This all-in-one study hub helps students organize their learning, track progress, manage time, and achieve academic goals.
 
 ## ✨ Features
